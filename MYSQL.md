@@ -207,7 +207,7 @@ CHARSET=utf8
 -- 修改表名
 ALTER TABLE teacher RENAME AS teacher1
 -- 增加表字段
-ALTER TABLER teacher1 ADD  age INT(11)
+ALTER TABLE teacher1 ADD  age INT(11)
 -- 修改表字段
 	-- 修改约束
 ALTER TABLE teacher1 MODIFY age VARCHAR(11)
@@ -228,3 +228,293 @@ DROP TABLE IF EXISTS teacher1
 >注释 -- /**/
 >
 >sql关键字不敏感
+
+
+
+## 3、MySQL数据管理
+
+### 3.1、外键
+
+```mysql
+-- 创建外键的方式一 : 创建子表同时创建外键
+
+-- 年级表 (id\年级名称)
+CREATE TABLE `grade` (
+`gradeid` INT(10) NOT NULL AUTO_INCREMENT COMMENT '年级ID',
+`gradename` VARCHAR(50) NOT NULL COMMENT '年级名称',
+PRIMARY KEY (`gradeid`)
+) ENGINE=INNODB DEFAULT CHARSET=utf8
+
+-- 学生信息表 (学号,姓名,性别,年级,手机,地址,出生日期,邮箱,身份证号)
+CREATE TABLE `student` (
+`studentno` INT(4) NOT NULL COMMENT '学号',
+`studentname` VARCHAR(20) NOT NULL DEFAULT '匿名' COMMENT '姓名',
+`sex` TINYINT(1) DEFAULT '1' COMMENT '性别',
+`gradeid` INT(10) DEFAULT NULL COMMENT '年级',
+`phoneNum` VARCHAR(50) NOT NULL COMMENT '手机',
+`address` VARCHAR(255) DEFAULT NULL COMMENT '地址',
+`borndate` DATETIME DEFAULT NULL COMMENT '生日',
+`email` VARCHAR(50) DEFAULT NULL COMMENT '邮箱',
+`idCard` VARCHAR(18) DEFAULT NULL COMMENT '身份证号',
+PRIMARY KEY (`studentno`),
+KEY `FK_gradeid` (`gradeid`),
+CONSTRAINT `FK_gradeid` FOREIGN KEY (`gradeid`) REFERENCES `grade` (`gradeid`)
+) ENGINE=INNODB DEFAULT CHARSET=utf8
+
+
+-- 创建外键方式二 : 创建子表完毕后,修改子表添加外键
+ALTER TABLE `student`
+ADD CONSTRAINT `FK_gradeid` FOREIGN KEY (`gradeid`) REFERENCES `grade` (`gradeid`);
+
+```
+
+
+
+### 3.2、DML语言
+
+### 3.3、添加
+
+基本语法：
+
+```mysql
+-- insert into `表名` (字段1,字段2...) values (v1,v2...)，(v1,v2...)
+-- 主键如果自增  可以省略
+-- 字段可以省略  但是value要一一对应
+```
+
+
+
+### 3.4、修改
+
+```mysql
+--修改name字段
+UPDATE `student` SET `name`='超级萌萌' WHERE NAME='22'
+
+--不指定条件的情况下，会改动所有表
+UPDATE 	`student` SET `name`='帅气的萌萌' 
+
+--修改多个属性
+UPDATE `student` SET `name`='超级无敌萌',`pwd`='988',`email`='@qqq.com' WHERE id=1;
+
+--语法:
+--update `表名` set `字段名` ='values' where 条件
+```
+
+**where条件语句**
+
+### 3.4、删除
+
+```mysql
+--删除数据(避免这样写)
+DELETE FROM `student`;
+--删除一条数据
+DELETE FROM `student` WHERE id=1;
+--清空student
+truncate `student`
+```
+
+**delete 和 truncate 区别**
+
+- 相同:都能删除数据，都不会删除表结构
+
+- 不同:
+
+  1)TRUNCATE 重新设置自增列，计数器会归零
+
+  2)不会影响事务
+
+**delete删除的问题，重启数据库现象**
+
+- innoDB 自增列会从1开始(存在内存当中，断电即失)
+- MyISAM继续从上一个自增量开始(存在文件中，不会丢失)
+
+
+
+## 4、数据库查询语句（Data Query Language）
+
+### 4.1、基本语法
+
+```mysql
+SELECT [ALL | DISTINCT]
+{* | table.* | [table.field1[as alias1][,table.field2[as alias2]][,...]]}
+FROM table_name [as table_alias]
+    [left | right | inner join table_name2]  -- 联合查询
+    [WHERE ...]  -- 指定结果需满足的条件
+    [GROUP BY ...]  -- 指定结果按照哪几个字段来分组
+    [HAVING]  -- 过滤分组的记录必须满足的次要条件
+    [ORDER BY ...]  -- 指定查询记录按一个或多个条件排序
+    [LIMIT {[offset,]row_count | row_countOFFSET offset}];
+    --  指定查询的记录从哪条至哪条
+```
+
+```mysql
+-- 查询所有学生 SELECT 字段 FROM 表
+SELECT * From `student`
+
+-- 查询指定字段
+SELECT `studentno`,`studentname` FROM `student`
+
+-- 别名，给结果起一个名字 AS, 可以给字段起别名，也可以给表起别名
+SELECT `studentno` AS 学号, `studentname` AS 学生姓名 FROM `student` AS s
+
+-- 函数 Concat(a,b)
+SELECT CONCAT('姓名:', `studentname`) AS 新名字 FROM `student`
+
+-- 发现重复数据，去重
+SELECT DISTINCT `studentno` FROM `result` 
+
+SELECT VERSION() -- 查询系统版本 (函数）
+SELECT 100*3-1 AS 计算结果 -- 用来计算 （表达式）
+SELECT @@auto_increment_increment -- 查询自增的步长 （变量）
+
+-- 学员考试成绩 +1 分查看
+SELECT `studentno`,`studentresult`+ 1 AS '提分后' FROM `result`
+
+```
+
+### 4.2、模糊查询
+
+|   运算符    |       语法        | 功能 |
+| :---------: | :---------------: | :--: |
+|   is null   |                   |      |
+| is not null |                   |      |
+| between and | a between b and c |      |
+|  **like**   |     a like b      |      |
+|   **In**    |  a in(a1,a2....)  |      |
+
+```mysql
+-- =======================模糊查询======================
+-- 查询姓刘的同学
+-- like 结合 %(代表0到任意个字符） _（一个字符）
+SELECT `studentno`, `studentname` FROM `student`
+WHERE `studentname` LIKE '张%'
+
+-- 查询修张的同学，名字后面只有一个字的
+SELECT `studentno`, `studentname` FROM `student`
+WHERE `studentname` LIKE '张_'
+
+-- 查询修张的同学，名字后面只有两个个字的
+SELECT `studentno`, `studentname` FROM `student`
+WHERE `studentname` LIKE '张__'
+
+-- 查询名字中间带有伟的 %伟%
+SELECT `studentno`, `studentname` FROM `student`
+WHERE `studentname` LIKE '%伟%'
+
+-- =====in =====
+-- 查询1001，1002，1003号学员
+SELECT `studentno`, `studentname` FROM `student`
+WHERE `studentno` IN(1001, 1002, 1003)
+
+-- 查询在北京的学员
+SELECT `studentno`, `studentname` FROM `student`
+WHERE  `address` IN('北京朝阳');
+
+SELECT `studentno`, `studentname` FROM `student`
+WHERE  `address` IN('北京'); -- 查不出来
+
+
+-- ====== null  not null ====
+
+-- 查询地址为空的学生 null ''
+SELECT `studentno`, `studentname` FROM `student`
+WHERE  `address` = '' OR `address` IS NULL
+
+
+-- 查询有出生日期 不为空
+SELECT `studentno`, `studentname` FROM `student`
+WHERE  `borndate` IS NOT NULL
+
+```
+
+### 4.3、连接查询
+
+<img src="https://img-blog.csdnimg.cn/20210208165037862.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80NTQ4MzMyOA==,size_16,color_FFFFFF,t_70#pic_center" alt="在这里插入图片描述" style="zoom:150%;" />
+
+```mysql
+SELECT s.studentno , s.studentname, subjectno, studentresult
+FROM student AS s
+INNER JOIN result AS r
+WHERE s.studentno = r.studentno
+
+SELECT student.studentno, student.studentname, result.subjectno, result.studentresult
+FROM student
+INNER JOIN result
+WHERE student.studentno = result.studentno
+
+-- Right Join
+SELECT s.studentno, studentname, subjectno, studentresult
+FROM student s
+RIGHT JOIN result r
+ON s.studentno = r.studentno
+
+-- Left Join
+SELECT s.studentno, studentname, subjectno, studentresult
+FROM student s
+LEFT JOIN result r
+ON s.studentno = r.studentno
+
+-- 查询缺考的同学
+-- Left Join
+SELECT s.studentno, studentname, subjectno, studentresult
+FROM student s
+LEFT JOIN result r
+ON s.studentno = r.studentno
+WHERE studentresult IS NULL
+
+-- 这里发现 = null查询不到想要的结果，即这种写法要规避
+-- SQL实际上使用is null 和 is not null判断字段为空，注意为空不代表为空字符串和0
+-- 而null = null和null<>null其实返回的都是false，任何值和null做运算的结果都是false
+SELECT s.studentno, studentname, subjectno, studentresult
+FROM student s
+LEFT JOIN result r
+ON s.studentno = r.studentno
+WHERE studentresult = NULL
+
+
+- 思考题（查询了参加考试的同学信息：学号，学生姓名，科目名，分数）
+/*思路
+1.分析需求，分析查询的字段来自哪些表，student,result, subject（连接查询）
+2.确定使用哪种连接查询？ 7种
+确定交叉点（这两个表中的哪个数据是相同的）
+判断条件： 学生表中的studentno = 成绩表 studentno
+*/
+SELECT s.studentno, studentname, subjectname, studentresult
+FROM student s
+RIGHT JOIN result r
+ON s.studentno = r.studentno
+INNER JOIN `subject` sub
+ON r.subjectno = sub.subjectno
+
+-- 我要查询那些数据 select 。。。
+-- 从那几个表中查FROM表 xxx join 连接的表 on 交叉条件
+-- 假设存在一种多张表查询，从两张慢慢增加
+
+-- from a left jion b
+-- from a rigth join b
+
+-- 查询科目所属的年级（科目名称，年级名称）
+SELECT `subjectname`, gradename
+FROM `subject` sub
+INNER JOIN grade g
+ON sub.gradeid = g.gradeid
+
+-- 查询了参加 高等数据-1 考试的同学信息： 学号，学生姓名，科目名称，分数
+SELECT s.studentno, studentname, `subjectname`, studentresult
+FROM student s
+INNER JOIN result r
+ON s.studentno = r.studentno
+INNER JOIN `subject` sub
+ON r.subjectno = sub.subjectno
+WHERE `subjectname` = '高等数学-1'
+
+```
+
+**自连接：表自己与表自己连接（一张表拆成两张表分析）**
+
+```mysql
+SELECT a.`categoryname` AS '父栏目' , b.`categoryname` AS '子栏目'
+FROM `category` AS a, `category` AS b
+WHERE a.`categoryid` = b.`pid`
+```
+
