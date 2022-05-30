@@ -518,3 +518,137 @@ FROM `category` AS a, `category` AS b
 WHERE a.`categoryid` = b.`pid`
 ```
 
+
+
+### 4.4、分类和排序
+
+```mysql
+-- 排序： 升序 ASC， 降序 DESC
+
+-- order BY 字段 升序降序
+-- 根据查询结果根据 成绩降序	排序
+SELECT s.studentno, studentname, `subjectname`, studentresult
+FROM student s
+INNER JOIN result r
+ON s.studentno = r.studentno
+INNER JOIN `subject` sub
+ON r.subjectno = sub.subjectno
+WHERE `subjectname` = '高等数学-1'
+ORDER BY studentresult ASC
+
+-- 为什么要分页？
+-- 缓解数据库压力，给人的体验更好
+
+-- 分页，每页只显示五条数据
+-- 语法：limit 起始值，页面的大小
+-- 网页应用： 当前页，总的页数，页面的大小
+-- LIMIT 0,5 1~5
+
+SELECT s.studentno, studentname, `subjectname`, studentresult
+FROM student s
+INNER JOIN result r
+ON s.studentno = r.studentno
+INNER JOIN `subject` sub
+ON r.subjectno = sub.subjectno
+WHERE `subjectname` = '高等数学-1'
+ORDER BY studentresult ASC
+LIMIT 5,5
+
+-- 第一页 LIMIT 0,5  （1 - 1）* 5
+-- 第二页 LIMIT 5,5 （2 - 1）* 5
+-- 第三页 LIMIT 10,5 （3 - 1）* 5
+-- 第四页 LIMIT 15,5 （4 - 1）* 5  （n - 1)*pagesize, pagesize
+-- [pagesize:页面大小]
+-- [（n - 1)*pagesize 起始值]
+-- [n: 当前页]
+-- [数据总数/页面大小 + 1= 总页数]
+
+
+-- 查询 JAVA第一学年 课程成绩排名前十的学生，并且分数要大于80的学生（学号，姓名，课程名称，分数）
+SELECT s.studentno, studentname, `subjectname`, studentresult
+FROM student s
+INNER JOIN result r
+ON s.studentno = r.studentno
+INNER JOIN `subject` sub
+ON r.subjectno = sub.subjectno
+WHERE subjectname = 'Java程序设计-1' AND studentresult > 80
+ORDER BY studentresult DESC
+LIMIT 0,10
+
+
+```
+
+
+
+### 4,5、 分组和过滤
+
+```mysql
+-- 查询不同课程的平均分，最高分，最低分
+-- 核心：（根据不同的课程分组）
+SELECT `subjectname`, AVG(studentresult) AS 平均分, MAX(studentresult) AS 最高分, MIN(studentresult) AS 最低分
+FROM result r
+INNER JOIN `subject` sub
+ON r.subjectno = sub.subjectno
+GROUP BY r.subjectno -- 通过什么字段分组
+HAVING 平均分 > 60
+
+```
+
+
+
+## 5、MySQL中的函数
+
+### 5.1、常用函数
+
+```sql
+-- 数学运算
+select ABS(-8)	-- 绝对值
+select CEILING(9.4) -- 上取整
+select floor(9.4)	-- 下取证
+select RAND()	-- 0-1之间的随机数
+select SIGN(10)	-- 符号函数
+
+-- 字符串函数
+select CHAR_LENGTH()	-- 字符串长度
+select CONCAT(s1,s2,s3...)	-- 字符串拼接
+select INSERT(str,pos,newstr)	-- 指定位置插入
+select replace(str1,substr,str2)
+select UPPER()
+select LOWER()
+select substr(str,pos,len)
+select reverse()
+
+-- 时间和日期函数
+select CURRENT_DATE() -- 获取当前日期
+select CURRENT_DATE() -- 获取当前日期
+select NOW()	-- 获取当前时间
+select LOCALTIME() -- 获取本地时间
+select SYSDATE() -- 系统时间
+select YEAR()
+select MONTH()
+select DAY()
+select HOUR()
+select MINUTE()
+select SECOND()
+
+-- 系统
+SELECT SYSTEM_USER()
+SELECT USER()
+SELECT VERSION()
+
+```
+
+### 5.2、常用函数
+
+```mysql
+select COUNT()	-- 计数
+select SUM()	-- 累加
+select AVG()	-- 均值
+select MAX()	-- 最大值
+select MIN()	-- 最小值
+```
+
+
+
+
+
